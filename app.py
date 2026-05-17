@@ -8,15 +8,10 @@ translator = Translator()
 
 def translate_text(text, dest='en'):
     try:
-        result = translator.translate(text, dest=dest)
-        return result.text
-    except Exception as e:
-        print(f"Ошибка перевода: {e}")
         return text
 
 
 def init_db():
-    conn = sqlite3.connect('restaurant.db')
     cur = conn.cursor()
     cur.execute('''
         CREATE TABLE IF NOT EXISTS menu (
@@ -66,7 +61,6 @@ def init_db():
 
 
 def get_db():
-    conn = sqlite3.connect('restaurant.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -532,4 +526,3 @@ def handler(event, context):
                                                              'hide': True}]
     return {'version': event['version'], 'session': session,
             'response': {'text': t['unknown'], 'buttons': buttons, 'end_session': False}}
-
