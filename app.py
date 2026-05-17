@@ -1,21 +1,21 @@
 import json
 import sqlite3
 from datetime import datetime
+import asyncio
 from googletrans import Translator
 
 translator = Translator()
 
 
-def translate_text(text, dest='en'):
+def translate_text(text):
     try:
-        result = translator.translate(text, dest=dest)
-        return result.text
-    except Exception as e:
-        print(f"Ошибка перевода: {e}")
+        return asyncio.run(translator.translate(text, dest='en')).text
+    except:
         return text
 
 
 def init_db():
+    conn = sqlite3.connect('restaurant.db')
     cur = conn.cursor()
     cur.execute('''
         CREATE TABLE IF NOT EXISTS menu (
@@ -65,6 +65,7 @@ def init_db():
 
 
 def get_db():
+    conn = sqlite3.connect('restaurant.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -216,6 +217,7 @@ TEXTS_RU = {
     'admin_activated': '🔐 АДМИН-ПАНЕЛЬ\n\nМеню\nДобавить\nРедактировать [ID]\nУдалить [ID]\nЗаказы\nВыполнить [ID]\nСтатистика\nВыйти',
     'admin_exit': 'Выход из админ-панели'
 }
+TEXTS_EN = {}
 
 sessions = {}
 
@@ -241,7 +243,7 @@ def handler(event, context):
     current_cat = sessions[user_id].get('current_cat')
 
     if lang == 'en':
-        t = {k: translate_text(v, 'en') for k, v in TEXTS_RU.items()}
+        t = TEXTS_EN
     else:
         t = TEXTS_RU
 
@@ -530,3 +532,26 @@ def handler(event, context):
                                                              'hide': True}]
     return {'version': event['version'], 'session': session,
             'response': {'text': t['unknown'], 'buttons': buttons, 'end_session': False}}
+
+
+if __name__ == "__main__":
+    from flask import Flask, request, jsonify
+    import time
+
+    start = time.time()
+    print('ПЕРЕВОД ТЕКСТА')
+    TEXTS_EN = {k: translate_text(v) for k, v in TEXTS_RU.items()}
+    stop = time.time()
+    print(f'Перевёл текст за {stop - start}')
+    app = Flask(__name__)
+
+
+    @app.route('/post', methods=['POST'])
+    def handle():
+        event = request.json
+        context = {}
+        result = handler(event, context)
+        return jsonify(result)
+
+
+    app.run(host='127.0.0.1', port=8080, debug=True)
