@@ -8,6 +8,10 @@ translator = Translator()
 
 def translate_text(text, dest='en'):
     try:
+        result = translator.translate(text, dest=dest)
+        return result.text
+    except Exception as e:
+        print(f"Ошибка перевода: {e}")
         return text
 
 
